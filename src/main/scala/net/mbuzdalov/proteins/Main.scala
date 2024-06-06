@@ -44,8 +44,8 @@ object Main:
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
         for run <- 0 until 100 do
-          val (set, metric, first) = Greedy.run(data, count)
-          println(s"Fitness $metric when starting at $first, proteins ${set.mkString(", ")}")
+          val (solution, first) = Greedy.run(data, count)
+          println(s"Fitness ${solution.cost} when starting at $first, proteins ${solution.proteinNames(data).mkString(", ")}")
       case "measure" =>
         val sets = args.drop(2)
         val data = readEmbeddings(args(1))

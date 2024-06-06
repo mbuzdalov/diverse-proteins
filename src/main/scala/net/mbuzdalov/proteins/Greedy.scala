@@ -2,8 +2,6 @@ package net.mbuzdalov.proteins
 
 import java.util.concurrent.ThreadLocalRandom
 
-import scala.collection.immutable.TreeSet
-
 object Greedy:
   private def findMostDistant(db: Container, indices: Int*): (Int, Double) =
     val listMostDistant = Array.newBuilder[Int]
@@ -21,7 +19,7 @@ object Greedy:
     val toSample = listMostDistant.result()
     (toSample(ThreadLocalRandom.current().nextInt(toSample.length)), minDistance)
 
-  def run(db: Container, count: Int): (Set[String], Double, String) =
+  def run(db: Container, count: Int): (Solution, String) =
     val rng = ThreadLocalRandom.current()
     val indices = new Array[Int](count)
     val seedIndex = rng.nextInt(db.size)
@@ -33,4 +31,4 @@ object Greedy:
       indices(i) = ii
       mi
 
-    (TreeSet(indices.map(db.name) *), metric, db.name(i0))
+    (Solution(IArray(indices *), metric), db.name(i0))
