@@ -8,7 +8,6 @@ object Greedy:
     var minDistance = 0.0
 
     Loops.foreach(0, db.size): i =>
-      val curr = db.embedding(i)
       val locallyMin = Loops.mapMin(0, indices.length)(j => db.manhattanDistance(i, indices(j)))
       if locallyMin > minDistance then
         minDistance = locallyMin

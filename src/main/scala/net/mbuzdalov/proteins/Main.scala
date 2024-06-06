@@ -45,7 +45,6 @@ object Main:
       case "stats" =>
         val data = readEmbeddings(args(1))
         println(s"${data.size} proteins")
-        println(s"${Loops.mapSum(0, data.size)(i => data.embedding(i).length.toLong) * 4} total size in bytes")
       case "greedy" =>
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
