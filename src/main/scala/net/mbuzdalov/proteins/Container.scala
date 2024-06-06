@@ -8,7 +8,11 @@ class Container(seq: IArray[(String, IArray[Float])]):
   def index(name: String): Int = indexMap(name)
   def embedding(index: Int): IArray[Float] = seq(index)._2
   def embedding(name: String): IArray[Float] = embedding(indexMap(name))
-  
-  def manhattanDistance(i1: Int, i2: Int): Double = 
+
+  def evaluateFromScratch(indices: Int*): Double =
+    Loops.mapMin(0, indices.length): i =>
+      Loops.mapMin(i + 1, indices.length): j =>
+        manhattanDistance(indices(i), indices(j))
+
+  def manhattanDistance(i1: Int, i2: Int): Double =
     Distance.manhattan(embedding(i1), embedding(i2))
-    

@@ -2,6 +2,7 @@ package net.mbuzdalov.proteins
 
 import java.io.*
 import java.util.StringTokenizer
+import java.util.concurrent.{Callable, ScheduledThreadPoolExecutor}
 import java.util.zip.GZIPInputStream
 
 import scala.annotation.tailrec
@@ -26,12 +27,17 @@ object Main:
     for set <- sets do
       val tok = new StringTokenizer(set, ",:")
       val name = tok.nextToken()
-      val data = Array.fill(tok.countTokens())(tok.nextToken())
-      val result = Loops.mapMin(0, data.length): i =>
-        val ii = db.index(data(i))
-        Loops.mapMin(i + 1, data.length): j =>
-          db.manhattanDistance(ii, db.index(data(j)))
-      println(s"$result <= $name (${data.sorted.mkString(", ")})")
+      val names = Array.fill(tok.countTokens())(tok.nextToken())
+      val indices = names.map(db.index)
+      val result = db.evaluateFromScratch(indices *)
+      println(s"$result <= $name (${names.sorted.mkString(", ")})")
+
+  private def runParallel(times: Int)(fun: => Unit): Unit =
+    import scala.jdk.CollectionConverters.given
+    val pool = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+    val collection = (0 until times).map[Callable[Unit]](_ => () => fun).asJava
+    pool.invokeAll(collection).asScala.foreach(_.get())
+    pool.shutdown()
 
   def main(args: Array[String]): Unit =
     args(0) match
@@ -43,11 +49,24 @@ object Main:
       case "greedy" =>
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
-        for run <- 0 until 100 do
+        runParallel(100):
+          val t0 = System.nanoTime()
           val (solution, first) = Greedy.run(data, count)
-          println(s"Fitness ${solution.cost} when starting at $first, proteins ${solution.proteinNames(data).mkString(", ")}")
+          Main.synchronized:
+            println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
+            println(s"Fitness ${solution.cost} when starting at $first, proteins ${solution.proteinNames(data).mkString(", ")}")
       case "measure" =>
         val sets = args.drop(2)
         val data = readEmbeddings(args(1))
         evaluate(data, sets)
+      case "local" =>
+        val count = args(2).toInt
+        val data = readEmbeddings(args(1))
+        runParallel(100):
+          val t0 = System.nanoTime()
+          val solution = LocalSearch.optimize(data, count)
+          Main.synchronized:
+            println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
+            println(s"Fitness ${solution.cost}, proteins ${solution.proteinNames(data).mkString(", ")}")
+
   end main
