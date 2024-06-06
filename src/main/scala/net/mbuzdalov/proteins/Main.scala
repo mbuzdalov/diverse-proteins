@@ -67,5 +67,10 @@ object Main:
           Main.synchronized:
             println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
             println(s"Fitness ${solution.cost}, proteins ${solution.proteinNames(data).mkString(", ")}")
-
+      case "recombine" =>
+        val count = args(2).toInt
+        val proteins = args.drop(3).mkString(",").replace(",,", ",")
+        val data = readEmbeddings(args(1))
+        val solution = MegaRecombiner.recombine(data, count, proteins)
+        println(s"Fitness ${solution.cost}, proteins ${solution.proteinNames(data).mkString(", ")}")
   end main
