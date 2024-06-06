@@ -27,9 +27,10 @@ object Main:
       val tok = new StringTokenizer(set, ",:")
       val name = tok.nextToken()
       val data = Array.fill(tok.countTokens())(tok.nextToken())
-      var result = Double.PositiveInfinity
-      for i <- data.indices; j <- i + 1 until data.length do
-        result = math.min(result, Distance.manhattan(db.embedding(data(i)), db.embedding(data(j))))
+      val result = Loops.mapMin(0, data.length): i =>
+        val ii = db.index(data(i))
+        Loops.mapMin(i + 1, data.length): j =>
+          db.manhattanDistance(ii, db.index(data(j)))
       println(s"$result <= $name (${data.sorted.mkString(", ")})")
 
   def main(args: Array[String]): Unit =

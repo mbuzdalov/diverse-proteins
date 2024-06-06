@@ -11,7 +11,7 @@ object Greedy:
 
     Loops.foreach(0, db.size): i =>
       val curr = db.embedding(i)
-      val locallyMin = Loops.mapMin(0, indices.length)(j => Distance.manhattan(curr, db.embedding(indices(j))))
+      val locallyMin = Loops.mapMin(0, indices.length)(j => db.manhattanDistance(i, indices(j)))
       if locallyMin > minDistance then
         minDistance = locallyMin
         listMostDistant.clear()
