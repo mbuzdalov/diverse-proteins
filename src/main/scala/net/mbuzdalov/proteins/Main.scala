@@ -14,22 +14,22 @@ object Main:
     target += (source.readUTF() -> source.readObject().asInstanceOf[IArray[Float]])
     readEmbeddingsForever(source, target)
 
-  private def readEmbeddings(source: String): Map[String, IArray[Float]] =
+  private def readEmbeddings(source: String): Container =
     Using.resource(new ObjectInputStream(new GZIPInputStream(new FileInputStream(source)))): in =>
-      val builder = Map.newBuilder[String, IArray[Float]]
+      val builder = IArray.newBuilder[(String, IArray[Float])]
       try
         readEmbeddingsForever(in, builder)
       catch
-        case e: EOFException => builder.result()
+        case e: EOFException => new Container(builder.result())
 
-  private def evaluate(db: Map[String, IArray[Float]], sets: Array[String]): Unit =
+  private def evaluate(db: Container, sets: Array[String]): Unit =
     for set <- sets do
       val tok = new StringTokenizer(set, ",:")
       val name = tok.nextToken()
       val data = Array.fill(tok.countTokens())(tok.nextToken())
       var result = Double.PositiveInfinity
       for i <- data.indices; j <- i + 1 until data.length do
-        result = math.min(result, Distance.manhattan(db(data(i)), db(data(j))))
+        result = math.min(result, Distance.manhattan(db.embedding(data(i)), db.embedding(data(j))))
       println(s"$result <= $name (${data.sorted.mkString(", ")})")
 
   def main(args: Array[String]): Unit =
@@ -38,14 +38,13 @@ object Main:
       case "stats" =>
         val data = readEmbeddings(args(1))
         println(s"${data.size} proteins")
-        println(s"${data.map(_._2.length.toLong).sum * 4} total size in bytes")
+        println(s"${Loops.mapSum(0, data.size)(i => data.embedding(i).length.toLong) * 4} total size in bytes")
       case "greedy" =>
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
-        for run <- 0 until 4 do
-          val (set, metric) = Greedy.run(data, count)
-          println(s"Found maxmin value: $metric")
-          println(s"Proteins: ${set.mkString(", ")}")
+        for run <- 0 until 100 do
+          val (set, metric, first) = Greedy.run(data, count)
+          println(s"Fitness $metric when starting at $first, proteins ${set.mkString(", ")}")
       case "measure" =>
         val sets = args.drop(2)
         val data = readEmbeddings(args(1))

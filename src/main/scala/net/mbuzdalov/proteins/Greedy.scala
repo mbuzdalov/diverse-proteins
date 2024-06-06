@@ -5,43 +5,32 @@ import java.util.concurrent.ThreadLocalRandom
 import scala.collection.immutable.TreeSet
 
 object Greedy:
-  private def findMostDistant(db: Array[(String, IArray[Float])], indices: Int*): (Int, Double) =
+  private def findMostDistant(db: Container, indices: Int*): (Int, Double) =
     val listMostDistant = Array.newBuilder[Int]
     var minDistance = 0.0
-    var i = 0
-    while i < db.length do
-      val curr = db(i)._2
-      var locallyMin = Double.MaxValue
-      var j = 0
-      while j < indices.length do
-        locallyMin = math.min(locallyMin, Distance.manhattan(curr, db(indices(j))._2))
-        j += 1
+
+    Loops.foreach(0, db.size): i =>
+      val curr = db.embedding(i)
+      val locallyMin = Loops.mapMin(0, indices.length)(j => Distance.manhattan(curr, db.embedding(indices(j))))
       if locallyMin > minDistance then
         minDistance = locallyMin
         listMostDistant.clear()
       if locallyMin == minDistance then
         listMostDistant += i
-      i += 1
 
     val toSample = listMostDistant.result()
     (toSample(ThreadLocalRandom.current().nextInt(toSample.length)), minDistance)
 
-  def run(db: Map[String, IArray[Float]], count: Int): (Set[String], Double) =
-    println("Starting greedy")
-    val ar = db.toArray
+  def run(db: Container, count: Int): (Set[String], Double, String) =
     val rng = ThreadLocalRandom.current()
     val indices = new Array[Int](count)
-    val seedIndex = rng.nextInt(ar.length)
-    println(s"  seed index: $seedIndex")
-    val (i0, m0) = findMostDistant(ar, seedIndex)
-    println(s"  #1 found (${ar(i0)._1})")
+    val seedIndex = rng.nextInt(db.size)
+    val (i0, m0) = findMostDistant(db, seedIndex)
     indices(0) = i0
-    var metric = m0
-    var i = 1
-    while i < count do
-      val (ii, mi) = findMostDistant(ar, indices.take(i) *)
-      println(s"  #${i + 1} found (${ar(ii)._1})")
+
+    val metric = Loops.mapMin(1, count): i =>
+      val (ii, mi) = findMostDistant(db, indices.take(i) *)
       indices(i) = ii
-      metric = math.min(metric, mi)
-      i += 1
-    (TreeSet(indices.map(i => ar(i)._1) *), metric)
+      mi
+
+    (TreeSet(indices.map(db.name) *), metric, db.name(i0))
