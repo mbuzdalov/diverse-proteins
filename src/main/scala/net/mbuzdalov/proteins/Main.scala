@@ -47,7 +47,9 @@ object Main:
         println(s"${data.size} proteins")
       case "greedy" =>
         val count = args(2).toInt
+        val tl = System.nanoTime()
         val data = readEmbeddings(args(1))
+        println(f"# Loaded in ${(System.nanoTime() - tl) * 1e-9}%01f seconds")
         runParallel(100):
           val t0 = System.nanoTime()
           val (solution, first) = Greedy.run(data, count)

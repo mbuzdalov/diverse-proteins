@@ -4,10 +4,13 @@ object MegaRecombiner:
   def recombine(cont: Container, count: Int, proteins: String): Solution =
     val indices = proteins.split(',').map(cont.index).distinct
     println(s"Number of proteins to consider: ${indices.length}")
+    println(s"    Proteins: ${indices.map(cont.name).mkString(",")}")
     require(indices.length < 64)
     require(indices.length > count)
     val recombiner = new MegaRecombiner(cont, IArray(indices *), count)
+    val t0 = System.nanoTime()
     recombiner.go(0, 0L, Double.PositiveInfinity)
+    println(f"    Time spent in brute-force: ${(System.nanoTime() - t0) * 1e-9}%02f seconds")
     val solution = indices.indices.filter(i => (recombiner.currentBestMask & (1L << i)) != 0).map(indices)
     val checkup = cont.evaluateFromScratch(solution *)
     assert(checkup == recombiner.currentMaximum)
