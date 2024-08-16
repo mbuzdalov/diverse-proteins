@@ -31,7 +31,7 @@ object LocalSearch:
         matrix(index)(i) = matrix(i)(index)
 
   def optimize(cont: Container, initialSolution: Solution): Solution =
-    val n = initialSolution.indices.size
+    val n = initialSolution.indices.length
     val rng = ThreadLocalRandom.current()
     val current = Array(initialSolution.indices *)
     val distanceMatrix = Array.tabulate(n, n)((i, j) => if i == j then Double.PositiveInfinity else cont.manhattanDistance(current(i), current(j)))
@@ -52,7 +52,7 @@ object LocalSearch:
         // updated, need to recompute
         countUntested = n
         replace(cont, current, realIndex, otherIndex, distanceMatrix)
-        // this is double-check that we recompute distances correctly
+        // this is to double-check that we recompute distances correctly
         //val checkup = cont.evaluateFromScratch(current *)
         val actual = Loops.mapMin(0, n)(i => distanceMatrix(i).min)
         //if checkup != actual then throw new AssertionError(s"Expected $checkup found $actual")
