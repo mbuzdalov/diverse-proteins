@@ -39,10 +39,10 @@ object Greedy:
       indices(i) = lastIndex
       val sample = new SampleMax(0.0)
 
-      Loops.foreach(0, db.size): i =>
-        val currDist = math.min(minDistances(i), db.manhattanDistance(lastIndex, i))
-        minDistances(i) = currDist
-        sample.add(i, currDist)
+      Loops.foreach(0, db.size): j =>
+        val currDist = math.min(minDistances(j), db.manhattanDistance(lastIndex, j))
+        minDistances(j) = currDist
+        sample.add(j, currDist)
 
       metric = math.min(metric, sample.maximum())
       lastIndex = sample.sampleIndex()
