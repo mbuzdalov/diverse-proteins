@@ -3,31 +3,49 @@ package net.mbuzdalov.proteins
 import java.util.concurrent.ThreadLocalRandom
 
 object Greedy:
-  private def findMostDistant(db: Container, indices: Int*): (Int, Double) =
-    val listMostDistant = Array.newBuilder[Int]
-    var minDistance = 0.0
+  private class SampleMax(baseValue: Double):
+    private val list = Array.newBuilder[Int]
+    private var value: Double = baseValue
 
+    def add(index: Int, value: Double): Unit =
+      if value > this.value then
+        list.clear()
+        this.value = value
+      if value == this.value then
+        list += index
+
+    def sampleIndex(): Int =
+      val list = this.list.result()
+      list(ThreadLocalRandom.current().nextInt(list.length))
+
+    def maximum(): Double = value
+
+  private def findMostDistantFromOne(db: Container, index: Int): Int =
+    val sample = new SampleMax(0.0)
     Loops.foreach(0, db.size): i =>
-      val locallyMin = Loops.mapMin(0, indices.length)(j => db.manhattanDistance(i, indices(j)))
-      if locallyMin > minDistance then
-        minDistance = locallyMin
-        listMostDistant.clear()
-      if locallyMin == minDistance then
-        listMostDistant += i
-
-    val toSample = listMostDistant.result()
-    (toSample(ThreadLocalRandom.current().nextInt(toSample.length)), minDistance)
+      sample.add(i, db.manhattanDistance(i, index))
+    sample.sampleIndex()
 
   def run(db: Container, count: Int): (Solution, String) =
     val rng = ThreadLocalRandom.current()
-    val indices = new Array[Int](count)
     val seedIndex = rng.nextInt(db.size)
-    val (i0, m0) = findMostDistant(db, seedIndex)
-    indices(0) = i0
+    val indices = new Array[Int](count)
+    val minDistances = Array.fill(db.size)(Double.PositiveInfinity)
+    var lastIndex = findMostDistantFromOne(db, seedIndex)
+    val startName = db.name(lastIndex)
+    var metric = Double.PositiveInfinity
 
-    val metric = Loops.mapMin(1, count): i =>
-      val (ii, mi) = findMostDistant(db, indices.take(i) *)
-      indices(i) = ii
-      mi
+    Loops.foreach(0, count - 1): i =>
+      indices(i) = lastIndex
+      val sample = new SampleMax(0.0)
 
-    (Solution(IArray(indices *), metric), db.name(i0))
+      Loops.foreach(0, db.size): i =>
+        val currDist = math.min(minDistances(i), db.manhattanDistance(lastIndex, i))
+        minDistances(i) = currDist
+        sample.add(i, currDist)
+
+      metric = math.min(metric, sample.maximum())
+      lastIndex = sample.sampleIndex()
+
+    indices(count - 1) = lastIndex
+    (Solution(IArray(indices *), metric), startName)
