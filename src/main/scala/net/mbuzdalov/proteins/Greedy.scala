@@ -24,7 +24,7 @@ object Greedy:
       value = baseValue
       list.clear()
 
-  def run(db: Container, count: Int): (Solution, String) =
+  def run(db: Container, count: Int): (IArray[Int], String) =
     val rng = ThreadLocalRandom.current()
     val sample = new SampleMax(0.0)
 
@@ -60,4 +60,4 @@ object Greedy:
     // The very last element has to be added explicitly.
     // We save some time by not comparing it with all other proteins.
     indices(count - 1) = lastIndex
-    (Solution(IArray(indices *), Solution.NamedCost("min", metric)), startName)
+    (IArray(indices *), startName)

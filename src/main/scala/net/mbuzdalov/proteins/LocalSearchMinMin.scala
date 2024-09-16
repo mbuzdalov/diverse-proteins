@@ -7,12 +7,12 @@ object LocalSearchMinMin:
     private val distances = Array.tabulate(cont.size, selection.length):
       (i, j) => cont.manhattanDistance(i, selection(j))
 
-    def minExcept(contIndex: Int, exceptArrayIndex: Int): Double =
+    private def minExcept(contIndex: Int, exceptArrayIndex: Int): Double =
       val slice = distances(contIndex)
       Loops.mapMin(0, selection.length): i =>
         if i == exceptArrayIndex then Double.PositiveInfinity else slice(i)
 
-    def sumExcept(contIndex: Int, exceptArrayIndex: Int): Double =
+    private def sumExcept(contIndex: Int, exceptArrayIndex: Int): Double =
       val slice = distances(contIndex)
       Loops.mapSum(0, selection.length): i =>
         if i == exceptArrayIndex then 0.0 else slice(i)
@@ -32,7 +32,7 @@ object LocalSearchMinMin:
         true
   end DistanceCache
 
-  def optimize(cont: Container, selectionSize: Int): Solution =
+  def optimize(cont: Container, selectionSize: Int): IArray[Int] =
     val rng = ThreadLocalRandom.current()
     val selectionBuilder = new scala.collection.mutable.HashSet[Int]()
     while selectionBuilder.size < selectionSize do
@@ -55,11 +55,4 @@ object LocalSearchMinMin:
       ordering(countUntested - 1) = realIndex
       countUntested -= 1
 
-    val min = Loops.mapMin(0, selectionSize)(i => cache.minExcept(selection(i), i))
-    val sumMin = Loops.mapSum(0, selectionSize)(i => cache.minExcept(selection(i), i))
-    val sumSum = Loops.mapSum(0, selectionSize)(i => cache.sumExcept(selection(i), i)) / 2
-
-    Solution(IArray(selection *),
-      Solution.NamedCost("min", min),
-      Solution.NamedCost("sum-min", sumMin),
-      Solution.NamedCost("sum-sum", sumSum))
+    IArray(selection *)

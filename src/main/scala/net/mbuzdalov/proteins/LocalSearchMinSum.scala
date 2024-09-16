@@ -32,7 +32,7 @@ object LocalSearchMinSum:
         sum += row(i)
     (min, sum)
 
-  def optimize(cont: Container, selectionSize: Int): Solution =
+  def optimize(cont: Container, selectionSize: Int): IArray[Int] =
     val rng = ThreadLocalRandom.current()
     val selection = new scala.collection.mutable.HashSet[Int]()
     while selection.size < selectionSize do
@@ -68,7 +68,7 @@ object LocalSearchMinSum:
         matrix(i)(index) = cont.manhattanDistance(array(i), newValue)
         matrix(index)(i) = matrix(i)(index)
 
-  private def optimize(cont: Container, initialIndices: IArray[Int], initialMin: Double, initialSum: Double): Solution =
+  private def optimize(cont: Container, initialIndices: IArray[Int], initialMin: Double, initialSum: Double): IArray[Int] =
     val n = initialIndices.length
     val rng = ThreadLocalRandom.current()
     val current = Array(initialIndices *)
@@ -90,11 +90,4 @@ object LocalSearchMinSum:
         countUntested = n
         replace(cont, current, realIndex, otherIndex, distanceMatrix)
 
-    val min = Loops.mapMin(0, n)(i => distanceMatrix(i).min)
-    val sumMin = Loops.mapSum(0, n)(i => distanceMatrix(i).min)
-    val sumSum = Loops.mapSum(0, n)(i => distanceMatrix(i).filter(_.isFinite).sum) / 2
-
-    Solution(IArray(current *),
-      Solution.NamedCost("min", min),
-      Solution.NamedCost("sum-min", sumMin),
-      Solution.NamedCost("sum-sum", sumSum))
+    IArray(current *)

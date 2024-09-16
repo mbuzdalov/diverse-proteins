@@ -1,7 +1,7 @@
 package net.mbuzdalov.proteins
 
 import java.io.*
-import java.util.StringTokenizer
+import java.util.{Locale, StringTokenizer}
 import java.util.concurrent.{Callable, ScheduledThreadPoolExecutor}
 import java.util.zip.GZIPInputStream
 
@@ -23,7 +23,7 @@ object Main:
         readEmbeddingsForever(in, builder)
       catch
         case e: EOFException =>
-          println(f"# Embeddings loaded in ${(System.nanoTime() - startTime) * 1e-9}%01f seconds")
+          println("# Embeddings loaded in %.01f seconds".formatLocal(Locale.US, (System.nanoTime() - startTime) * 1e-9))
           new Container(builder.result())
 
   private def evaluate(db: Container, sets: Array[String]): Unit =
@@ -42,6 +42,9 @@ object Main:
     pool.invokeAll(collection).asScala.foreach(_.get())
     pool.shutdown()
 
+  private def printTimeSpentSince(timeNanos: Long): Unit =
+    println("# Time spent: %.01f seconds".formatLocal(Locale.US, (System.nanoTime() - timeNanos) * 1e-9))
+
   def main(args: Array[String]): Unit =
     args(0) match
       case "import" => Importing.importEmbeddings(args(1), args(2))
@@ -55,8 +58,8 @@ object Main:
           val t0 = System.nanoTime()
           val (solution, first) = Greedy.run(data, count)
           Main.synchronized:
-            println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
-            println(s"Fitness ${solution.costString} when starting at $first, proteins ${solution.proteinNames(data).mkString(", ")}")
+            printTimeSpentSince(t0)
+            println(data.explainSolution(solution))
       case "measure" =>
         val sets = args.drop(2)
         val data = readEmbeddings(args(1))
@@ -68,8 +71,8 @@ object Main:
           val t0 = System.nanoTime()
           val solution = LocalSearchMinMin.optimize(data, count)
           Main.synchronized:
-            println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
-            println(s"Fitness ${solution.costString}, proteins ${solution.proteinNames(data).mkString(", ")}")
+            printTimeSpentSince(t0)
+            println(data.explainSolution(solution))
       case "local-min-sum" =>
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
@@ -77,12 +80,12 @@ object Main:
           val t0 = System.nanoTime()
           val solution = LocalSearchMinSum.optimize(data, count)
           Main.synchronized:
-            println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
-            println(s"Fitness ${solution.costString}, proteins ${solution.proteinNames(data).mkString(", ")}")
+            printTimeSpentSince(t0)
+            println(data.explainSolution(solution))
       case "recombine" =>
         val count = args(2).toInt
         val proteins = args.drop(3).mkString(",").replace(",,", ",")
         val data = readEmbeddings(args(1))
         val solution = MegaRecombiner.recombine(data, count, proteins)
-        println(s"Fitness ${solution.costString}, proteins ${solution.proteinNames(data).mkString(", ")}")
+        println(data.explainSolution(solution))
   end main

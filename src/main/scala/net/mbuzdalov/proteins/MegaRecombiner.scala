@@ -1,7 +1,7 @@
 package net.mbuzdalov.proteins
 
 object MegaRecombiner:
-  def recombine(cont: Container, count: Int, proteins: String): Solution =
+  def recombine(cont: Container, count: Int, proteins: String): IArray[Int] =
     val indices = proteins.split(',').map(cont.index).distinct
     println(s"Number of proteins to consider: ${indices.length}")
     println(s"    Proteins: ${indices.map(cont.name).mkString(",")}")
@@ -14,7 +14,7 @@ object MegaRecombiner:
     val solution = indices.indices.filter(i => (recombiner.currentBestMask & (1L << i)) != 0).map(indices)
     val checkup = cont.evaluateFromScratch(solution *)
     assert(checkup == recombiner.currentMaximum)
-    Solution(IArray(solution *), Solution.NamedCost("min", recombiner.currentMaximum))
+    IArray(solution *)
 
 class MegaRecombiner private(cont: Container, indices: IArray[Int], count: Int):
   private var currentMaximum = 0.0
