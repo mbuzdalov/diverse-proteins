@@ -60,4 +60,4 @@ object Greedy:
     // The very last element has to be added explicitly.
     // We save some time by not comparing it with all other proteins.
     indices(count - 1) = lastIndex
-    (Solution(IArray(indices *), metric), startName)
+    (Solution(IArray(indices *), Solution.NamedCost("min", metric)), startName)

@@ -55,7 +55,7 @@ object Main:
           val (solution, first) = Greedy.run(data, count)
           Main.synchronized:
             println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
-            println(s"Fitness ${solution.cost} when starting at $first, proteins ${solution.proteinNames(data).mkString(", ")}")
+            println(s"Fitness ${solution.costString} when starting at $first, proteins ${solution.proteinNames(data).mkString(", ")}")
       case "measure" =>
         val sets = args.drop(2)
         val data = readEmbeddings(args(1))
@@ -68,11 +68,11 @@ object Main:
           val solution = LocalSearch.optimize(data, count)
           Main.synchronized:
             println(f"# Time spent: ${(System.nanoTime() - t0) * 1e-9}%01f seconds")
-            println(s"Fitness ${solution.cost}, proteins ${solution.proteinNames(data).mkString(", ")}")
+            println(s"Fitness ${solution.costString}, proteins ${solution.proteinNames(data).mkString(", ")}")
       case "recombine" =>
         val count = args(2).toInt
         val proteins = args.drop(3).mkString(",").replace(",,", ",")
         val data = readEmbeddings(args(1))
         val solution = MegaRecombiner.recombine(data, count, proteins)
-        println(s"Fitness ${solution.cost}, proteins ${solution.proteinNames(data).mkString(", ")}")
+        println(s"Fitness ${solution.costString}, proteins ${solution.proteinNames(data).mkString(", ")}")
   end main

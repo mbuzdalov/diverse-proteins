@@ -14,7 +14,7 @@ object MegaRecombiner:
     val solution = indices.indices.filter(i => (recombiner.currentBestMask & (1L << i)) != 0).map(indices)
     val checkup = cont.evaluateFromScratch(solution *)
     assert(checkup == recombiner.currentMaximum)
-    Solution(IArray(solution *), recombiner.currentMaximum)
+    Solution(IArray(solution *), Solution.NamedCost("min", recombiner.currentMaximum))
 
 class MegaRecombiner private(cont: Container, indices: IArray[Int], count: Int):
   private var currentMaximum = 0.0
