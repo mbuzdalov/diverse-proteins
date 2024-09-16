@@ -16,12 +16,15 @@ object Main:
     readEmbeddingsForever(source, target)
 
   private def readEmbeddings(source: String): Container =
+    val startTime = System.nanoTime()
     Using.resource(new ObjectInputStream(new GZIPInputStream(new FileInputStream(source)))): in =>
       val builder = IArray.newBuilder[(String, IArray[Float])]
       try
         readEmbeddingsForever(in, builder)
       catch
-        case e: EOFException => new Container(builder.result())
+        case e: EOFException =>
+          println(f"# Embeddings loaded in ${(System.nanoTime() - startTime) * 1e-9}%01f seconds")
+          new Container(builder.result())
 
   private def evaluate(db: Container, sets: Array[String]): Unit =
     for set <- sets do
@@ -47,9 +50,7 @@ object Main:
         println(s"${data.size} proteins")
       case "greedy" =>
         val count = args(2).toInt
-        val tl = System.nanoTime()
         val data = readEmbeddings(args(1))
-        println(f"# Loaded in ${(System.nanoTime() - tl) * 1e-9}%01f seconds")
         runParallel(100):
           val t0 = System.nanoTime()
           val (solution, first) = Greedy.run(data, count)
@@ -62,9 +63,7 @@ object Main:
         evaluate(data, sets)
       case "local-min-min" =>
         val count = args(2).toInt
-        val tl = System.nanoTime()
         val data = readEmbeddings(args(1))
-        println(f"# Loaded in ${(System.nanoTime() - tl) * 1e-9}%01f seconds")
         runParallel(100):
           val t0 = System.nanoTime()
           val solution = LocalSearchMinMin.optimize(data, count)
@@ -73,9 +72,7 @@ object Main:
             println(s"Fitness ${solution.costString}, proteins ${solution.proteinNames(data).mkString(", ")}")
       case "local-min-sum" =>
         val count = args(2).toInt
-        val tl = System.nanoTime()
         val data = readEmbeddings(args(1))
-        println(f"# Loaded in ${(System.nanoTime() - tl) * 1e-9}%01f seconds")
         runParallel(100):
           val t0 = System.nanoTime()
           val solution = LocalSearchMinSum.optimize(data, count)
