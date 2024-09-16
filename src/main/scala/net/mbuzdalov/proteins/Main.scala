@@ -69,7 +69,7 @@ object Main:
         val data = readEmbeddings(args(1))
         runParallel(100):
           val t0 = System.nanoTime()
-          val solution = LocalSearchMinMin.optimize(data, count)
+          val solution = LocalSearchMinMin.optimize(data, count, useMin = true)
           Main.synchronized:
             printTimeSpentSince(t0)
             println(data.explainSolution(solution))
@@ -78,7 +78,7 @@ object Main:
         val data = readEmbeddings(args(1))
         runParallel(100):
           val t0 = System.nanoTime()
-          val solution = LocalSearchMinSum.optimize(data, count)
+          val solution = LocalSearchMinMin.optimize(data, count, useMin = false)
           Main.synchronized:
             printTimeSpentSince(t0)
             println(data.explainSolution(solution))
