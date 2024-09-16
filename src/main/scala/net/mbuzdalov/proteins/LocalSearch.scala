@@ -37,23 +37,26 @@ object LocalSearch:
     val cache = new DistanceCache(cont, selection, useMin)
     val ordering = Array.tabulate(selectionSize)(identity)
     var countUntested = selectionSize
+    var iterations = 0L
     while countUntested > 0 do
       val orderingIndex = rng.nextInt(countUntested)
       val realIndex = ordering(orderingIndex)
-  
+      iterations += 1
+
       if cache.tryImprove(realIndex) then
         // improved OK, reset the mutation set
         countUntested = selectionSize
-  
+
       // if we failed to improve, we remove the element from the mutation set
       // if we did not, we also remove the element from the just-reset mutation set
       ordering(orderingIndex) = ordering(countUntested - 1)
       ordering(countUntested - 1) = realIndex
       countUntested -= 1
-  
+
+    println(s"# Local search iterations: $iterations")
     IArray(selection *)
   end optimizeImpl
-    
+
   def optimize(cont: Container, selectionSize: Int, useMin: Boolean): IArray[Int] =
     val rng = ThreadLocalRandom.current()
     val selectionBuilder = new scala.collection.mutable.HashSet[Int]()
@@ -64,4 +67,3 @@ object LocalSearch:
 
   def optimize(cont: Container, selection: IArray[Int], useMin: Boolean): IArray[Int] =
     optimizeImpl(cont, Array(selection *), useMin)
-    
