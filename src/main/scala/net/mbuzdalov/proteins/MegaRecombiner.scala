@@ -7,16 +7,22 @@ object MegaRecombiner:
     println(s"    Proteins: ${indices.map(cont.name).mkString(",")}")
     require(indices.length < 64)
     require(indices.length > count)
-    val recombiner = new MegaRecombiner(cont, IArray(indices *), count)
+
     val t0 = System.nanoTime()
+    val matrix = IArray.tabulate(indices.length, indices.length):
+      (i, j) => cont.manhattanDistance(indices(i), indices(j))
+    println(f"    Time spent in matrix precalc: ${(System.nanoTime() - t0) * 1e-9}%.02f seconds")
+
+    val recombiner = new MegaRecombiner(matrix, count)
+    val t1 = System.nanoTime()
     recombiner.go(0, 0L, Double.PositiveInfinity)
-    println(f"    Time spent in brute-force: ${(System.nanoTime() - t0) * 1e-9}%02f seconds")
+    println(f"    Time spent in brute-force: ${(System.nanoTime() - t1) * 1e-9}%.02f seconds")
     val solution = indices.indices.filter(i => (recombiner.currentBestMask & (1L << i)) != 0).map(indices)
     val checkup = cont.evaluateFromScratch(solution *)
     assert(checkup == recombiner.currentMaximum)
     IArray(solution *)
 
-class MegaRecombiner private(cont: Container, indices: IArray[Int], count: Int):
+class MegaRecombiner private(m: IArray[IArray[Double]], count: Int):
   private var currentMaximum = 0.0
   private var currentBestMask = 0L
   def go(index: Int, mask: Long, prefix: Double): Unit =
@@ -27,10 +33,10 @@ class MegaRecombiner private(cont: Container, indices: IArray[Int], count: Int):
       currentBestMask = mask
       println(s"Updated to $currentMaximum by $currentBestMask")
     else
-      assert(index < indices.length)
-      if indices.length - index - 1 >= count - nBits then go(index + 1, mask, prefix)
+      assert(index < m.length)
+      if m.length - index - 1 >= count - nBits then go(index + 1, mask, prefix)
       if prefix > currentMaximum then
         val fromAdded = Loops.mapMin(0, index): i =>
-          if (mask & (1L << i)) != 0 then cont.manhattanDistance(indices(i), indices(index)) else Double.PositiveInfinity
+          if (mask & (1L << i)) != 0 then m(i)(index) else Double.PositiveInfinity
         if fromAdded > currentMaximum then
           go(index + 1, mask | (1L << index), math.min(prefix, fromAdded))
