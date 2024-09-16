@@ -92,7 +92,7 @@ object LocalSearchMinSum:
 
     val min = Loops.mapMin(0, n)(i => distanceMatrix(i).min)
     val sumMin = Loops.mapSum(0, n)(i => distanceMatrix(i).min)
-    val sumSum = Loops.mapSum(0, n)(i => distanceMatrix(i).sum) / 2
+    val sumSum = Loops.mapSum(0, n)(i => distanceMatrix(i).filter(_.isFinite).sum) / 2
 
     Solution(IArray(current *),
       Solution.NamedCost("min", min),
