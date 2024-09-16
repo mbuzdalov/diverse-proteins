@@ -64,21 +64,24 @@ object Main:
         val sets = args.drop(2)
         val data = readEmbeddings(args(1))
         evaluate(data, sets)
-      case "local-min-min" =>
+      case "local-rnd" =>
+        val useMin = args(3) == "min"
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
         runParallel(100):
           val t0 = System.nanoTime()
-          val solution = LocalSearchMinMin.optimize(data, count, useMin = true)
+          val solution = LocalSearch.optimize(data, count, useMin)
           Main.synchronized:
             printTimeSpentSince(t0)
             println(data.explainSolution(solution))
-      case "local-min-sum" =>
+      case "local-greedy" =>
+        val useMin = args(3) == "min"
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
+        val (initial, _) = Greedy.run(data, count) // greedy is stable enough to run just once
         runParallel(100):
           val t0 = System.nanoTime()
-          val solution = LocalSearchMinMin.optimize(data, count, useMin = false)
+          val solution = LocalSearch.optimize(data, initial, useMin)
           Main.synchronized:
             printTimeSpentSince(t0)
             println(data.explainSolution(solution))
