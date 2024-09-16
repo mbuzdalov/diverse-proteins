@@ -2,17 +2,14 @@ package net.mbuzdalov.proteins
 
 import java.util.concurrent.ThreadLocalRandom
 
-object LocalSearch:
-  private case class LocalSolution(indices: IArray[Int], minDist: Double)
-  
+object LocalSearchMinMin:
   def optimize(cont: Container, selectionSize: Int): Solution =
     val rng = ThreadLocalRandom.current()
     val selection = new scala.collection.mutable.HashSet[Int]()
     while selection.size < selectionSize do
       selection += rng.nextInt(cont.size)
     val fixed = IArray(selection.toArray *)
-    val local = optimize(cont, LocalSolution(fixed, cont.evaluateFromScratch(fixed *)))
-    Solution(local.indices, Solution.NamedCost("min", local.minDist))
+    optimize(cont, fixed, cont.evaluateFromScratch(fixed *))
 
   private def chooseOther(cont: Container, array: Array[Int], index: Int, currentDistance: Double): Int =
     var result = -1
@@ -33,14 +30,13 @@ object LocalSearch:
         matrix(i)(index) = cont.manhattanDistance(array(i), newValue)
         matrix(index)(i) = matrix(i)(index)
 
-  private def optimize(cont: Container, initialSolution: LocalSolution): LocalSolution =
-    val n = initialSolution.indices.length
+  private def optimize(cont: Container, initialIndices: IArray[Int], initialCost: Double): Solution =
+    val n = initialIndices.length
     val rng = ThreadLocalRandom.current()
-    val current = Array(initialSolution.indices *)
+    val current = Array(initialIndices *)
     val distanceMatrix = Array.tabulate(n, n)((i, j) => if i == j then Double.PositiveInfinity else cont.manhattanDistance(current(i), current(j)))
     val ordering = Array.tabulate(n)(identity)
     var countUntested = n
-    var currentCost = initialSolution.minDist
     while countUntested > 0 do
       val orderingIndex = rng.nextInt(countUntested)
       val realIndex = ordering(orderingIndex)
@@ -54,11 +50,12 @@ object LocalSearch:
         // updated, need to recompute
         countUntested = n
         replace(cont, current, realIndex, otherIndex, distanceMatrix)
-        // this is to double-check that we recompute distances correctly
-        //val checkup = cont.evaluateFromScratch(current *)
-        val actual = Loops.mapMin(0, n)(i => distanceMatrix(i).min)
-        //if checkup != actual then throw new AssertionError(s"Expected $checkup found $actual")
-        //println(s"# Updated at index $realIndex from $currentCost to $actual")
-        currentCost = actual
 
-    LocalSolution(IArray(current *), currentCost)
+    val min = Loops.mapMin(0, n)(i => distanceMatrix(i).min)
+    val sumMin = Loops.mapSum(0, n)(i => distanceMatrix(i).min)
+    val sumSum = Loops.mapSum(0, n)(i => distanceMatrix(i).sum) / 2
+    
+    Solution(IArray(current *), 
+      Solution.NamedCost("min", min), 
+      Solution.NamedCost("sum-min", sumMin), 
+      Solution.NamedCost("sum-sum", sumSum))
