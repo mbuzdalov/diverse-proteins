@@ -76,7 +76,7 @@ object Main:
         val tl = System.nanoTime()
         val data = readEmbeddings(args(1))
         println(f"# Loaded in ${(System.nanoTime() - tl) * 1e-9}%01f seconds")
-        Loops.foreach(0, 100): _ =>
+        runParallel(100):
           val t0 = System.nanoTime()
           val solution = LocalSearchMinSum.optimize(data, count)
           Main.synchronized:
