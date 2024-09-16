@@ -78,9 +78,9 @@ object Main:
         val useMin = args(3) == "min"
         val count = args(2).toInt
         val data = readEmbeddings(args(1))
-        val (initial, _) = Greedy.run(data, count) // greedy is stable enough to run just once
         runParallel(100):
           val t0 = System.nanoTime()
+          val (initial, _) = Greedy.run(data, count)
           val solution = LocalSearch.optimize(data, initial, useMin)
           Main.synchronized:
             printTimeSpentSince(t0)
