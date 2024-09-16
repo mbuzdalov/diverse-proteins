@@ -3,59 +3,60 @@ package net.mbuzdalov.proteins
 import java.util.concurrent.ThreadLocalRandom
 
 object LocalSearchMinMin:
+  private class DistanceCache(cont: Container, selection: Array[Int]):
+    private val distances = Array.tabulate(cont.size, selection.length): 
+      (i, j) => cont.manhattanDistance(i, selection(j))
+
+    def minExcept(contIndex: Int, exceptArrayIndex: Int): Double =
+      val slice = distances(contIndex)
+      Loops.mapMin(0, selection.length): i =>
+        if i == exceptArrayIndex then Double.PositiveInfinity else slice(i)
+    
+    def sumExcept(contIndex: Int, exceptArrayIndex: Int): Double =
+      val slice = distances(contIndex)
+      Loops.mapSum(0, selection.length): i =>
+        if i == exceptArrayIndex then 0.0 else slice(i)
+    
+    def tryImprove(index: Int): Boolean =
+      var best = -1
+      var bestMin = minExcept(selection(index), index)
+      Loops.foreach(0, cont.size): i =>
+        val currMin = minExcept(i, index)
+        if currMin > bestMin then
+          bestMin = currMin
+          best = i
+      if best == -1 then false else
+        selection(index) = best
+        Loops.foreach(0, cont.size): i =>
+          distances(i)(index) = cont.manhattanDistance(i, best)
+        true
+  end DistanceCache    
+  
   def optimize(cont: Container, selectionSize: Int): Solution =
     val rng = ThreadLocalRandom.current()
-    val selection = new scala.collection.mutable.HashSet[Int]()
-    while selection.size < selectionSize do
-      selection += rng.nextInt(cont.size)
-    val fixed = IArray(selection.toArray *)
-    optimize(cont, fixed, cont.evaluateFromScratch(fixed *))
-
-  private def chooseOther(cont: Container, array: Array[Int], index: Int, currentDistance: Double): Int =
-    var result = -1
-    var bestDistance = currentDistance
-    Loops.foreach(0, cont.size): i =>
-      if i != array(index) then
-        val minOthers = Loops.mapMin(0, array.length): j =>
-          if j == index then Double.PositiveInfinity else cont.manhattanDistance(array(j), i)
-        if minOthers > bestDistance then
-          bestDistance = minOthers
-          result = i
-    result
-
-  private def replace(cont: Container, array: Array[Int], index: Int, newValue: Int, matrix: Array[Array[Double]]): Unit =
-    array(index) = newValue
-    Loops.foreach(0, array.length): i =>
-      if i != index then
-        matrix(i)(index) = cont.manhattanDistance(array(i), newValue)
-        matrix(index)(i) = matrix(i)(index)
-
-  private def optimize(cont: Container, initialIndices: IArray[Int], initialCost: Double): Solution =
-    val n = initialIndices.length
-    val rng = ThreadLocalRandom.current()
-    val current = Array(initialIndices *)
-    val distanceMatrix = Array.tabulate(n, n)((i, j) => if i == j then Double.PositiveInfinity else cont.manhattanDistance(current(i), current(j)))
-    val ordering = Array.tabulate(n)(identity)
-    var countUntested = n
+    val selectionBuilder = new scala.collection.mutable.HashSet[Int]()
+    while selectionBuilder.size < selectionSize do
+      selectionBuilder += rng.nextInt(cont.size)
+    val selection = selectionBuilder.toArray
+    val cache = new DistanceCache(cont, selection)
+    val ordering = Array.tabulate(selectionSize)(identity)
+    var countUntested = selectionSize
     while countUntested > 0 do
       val orderingIndex = rng.nextInt(countUntested)
       val realIndex = ordering(orderingIndex)
-      val otherIndex = chooseOther(cont, current, realIndex, distanceMatrix(realIndex).min)
-      if otherIndex == -1 then
+      if cache.tryImprove(realIndex) then
+        countUntested = selectionSize
+      else  
         // failed to replace
         ordering(orderingIndex) = ordering(countUntested - 1)
         ordering(countUntested - 1) = realIndex
         countUntested -= 1
-      else
-        // updated, need to recompute
-        countUntested = n
-        replace(cont, current, realIndex, otherIndex, distanceMatrix)
 
-    val min = Loops.mapMin(0, n)(i => distanceMatrix(i).min)
-    val sumMin = Loops.mapSum(0, n)(i => distanceMatrix(i).min)
-    val sumSum = Loops.mapSum(0, n)(i => distanceMatrix(i).filter(_.isFinite).sum) / 2
+    val min = Loops.mapMin(0, selectionSize)(i => cache.minExcept(selection(i), i))
+    val sumMin = Loops.mapSum(0, selectionSize)(i => cache.minExcept(selection(i), i))
+    val sumSum = Loops.mapSum(0, selectionSize)(i => cache.sumExcept(selection(i), i)) / 2
     
-    Solution(IArray(current *), 
+    Solution(IArray(selection *), 
       Solution.NamedCost("min", min), 
       Solution.NamedCost("sum-min", sumMin), 
       Solution.NamedCost("sum-sum", sumSum))
