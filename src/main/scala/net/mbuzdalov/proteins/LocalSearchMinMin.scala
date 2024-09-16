@@ -4,19 +4,19 @@ import java.util.concurrent.ThreadLocalRandom
 
 object LocalSearchMinMin:
   private class DistanceCache(cont: Container, selection: Array[Int]):
-    private val distances = Array.tabulate(cont.size, selection.length): 
+    private val distances = Array.tabulate(cont.size, selection.length):
       (i, j) => cont.manhattanDistance(i, selection(j))
 
     def minExcept(contIndex: Int, exceptArrayIndex: Int): Double =
       val slice = distances(contIndex)
       Loops.mapMin(0, selection.length): i =>
         if i == exceptArrayIndex then Double.PositiveInfinity else slice(i)
-    
+
     def sumExcept(contIndex: Int, exceptArrayIndex: Int): Double =
       val slice = distances(contIndex)
       Loops.mapSum(0, selection.length): i =>
         if i == exceptArrayIndex then 0.0 else slice(i)
-    
+
     def tryImprove(index: Int): Boolean =
       var best = -1
       var bestMin = minExcept(selection(index), index)
@@ -30,8 +30,8 @@ object LocalSearchMinMin:
         Loops.foreach(0, cont.size): i =>
           distances(i)(index) = cont.manhattanDistance(i, best)
         true
-  end DistanceCache    
-  
+  end DistanceCache
+
   def optimize(cont: Container, selectionSize: Int): Solution =
     val rng = ThreadLocalRandom.current()
     val selectionBuilder = new scala.collection.mutable.HashSet[Int]()
@@ -44,19 +44,22 @@ object LocalSearchMinMin:
     while countUntested > 0 do
       val orderingIndex = rng.nextInt(countUntested)
       val realIndex = ordering(orderingIndex)
+
       if cache.tryImprove(realIndex) then
+        // improved OK, reset the mutation set
         countUntested = selectionSize
-      else  
-        // failed to replace
-        ordering(orderingIndex) = ordering(countUntested - 1)
-        ordering(countUntested - 1) = realIndex
-        countUntested -= 1
+
+      // if we failed to improve, we remove the element from the mutation set
+      // if we did not, we also remove the element from the just-reset mutation set
+      ordering(orderingIndex) = ordering(countUntested - 1)
+      ordering(countUntested - 1) = realIndex
+      countUntested -= 1
 
     val min = Loops.mapMin(0, selectionSize)(i => cache.minExcept(selection(i), i))
     val sumMin = Loops.mapSum(0, selectionSize)(i => cache.minExcept(selection(i), i))
     val sumSum = Loops.mapSum(0, selectionSize)(i => cache.sumExcept(selection(i), i)) / 2
-    
-    Solution(IArray(selection *), 
-      Solution.NamedCost("min", min), 
-      Solution.NamedCost("sum-min", sumMin), 
+
+    Solution(IArray(selection *),
+      Solution.NamedCost("min", min),
+      Solution.NamedCost("sum-min", sumMin),
       Solution.NamedCost("sum-sum", sumSum))
