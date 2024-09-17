@@ -1,4 +1,4 @@
-package ru.ifmo.onell.util
+package net.mbuzdalov.proteins
 
 object Viridis {
   private val viridisColorMap = Array(

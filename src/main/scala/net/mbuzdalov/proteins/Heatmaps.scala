@@ -6,8 +6,6 @@ import java.io.File
 import java.util.Locale
 import javax.imageio.ImageIO
 
-import ru.ifmo.onell.util.Viridis
-
 object Heatmaps:
   def draw(cont: Container, proteins: Seq[String], target: String): Unit =
     val width = 750
