@@ -91,4 +91,12 @@ object Main:
         val data = readEmbeddings(args(1))
         val solution = MegaRecombiner.recombine(data, count, proteins)
         println(data.explainSolution(solution))
+      case "heatmap" =>
+        val data = readEmbeddings(args(1))
+        for a <- args.drop(2) do
+          val eq = a.indexOf('=')
+          val filename = a.take(eq)
+          val proteins = a.drop(eq + 1).split(',').toIndexedSeq
+          Heatmaps.draw(data, proteins, filename)
+
   end main
